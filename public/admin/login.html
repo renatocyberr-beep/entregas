@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Prime Entregas — Login Admin</title>
+<style>
+  :root { --primary:#ff6b00; --primary-dark:#d95700; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+    background:linear-gradient(160deg,#1a1d24,#0f1115); min-height:100vh; display:flex; align-items:center; justify-content:center; padding:16px; }
+  .card { background:#fff; border-radius:20px; width:100%; max-width:380px; padding:28px 24px; box-shadow:0 20px 60px rgba(0,0,0,.4); }
+  .logo { text-align:center; margin-bottom:20px; }
+  .logo .badge { display:inline-flex; align-items:center; justify-content:center; width:56px; height:56px; border-radius:14px; background:var(--primary); color:#fff; font-size:26px; font-weight:800; margin-bottom:10px; }
+  .logo h1 { font-size:18px; margin:0; }
+  .logo p { margin:4px 0 0; color:#6b7280; font-size:13px; }
+  label { font-size:13px; font-weight:600; color:#374151; display:block; margin:14px 0 6px; }
+  input { width:100%; padding:13px 14px; border-radius:12px; border:1.5px solid #e5e7eb; font-size:16px; outline:none; }
+  input:focus { border-color:var(--primary); }
+  button { width:100%; padding:14px; border-radius:12px; border:none; font-size:16px; font-weight:700; cursor:pointer; margin-top:18px; background:var(--primary); color:#fff; }
+  button:disabled { background:#d1d5db; }
+  .msg { font-size:13px; margin-top:10px; text-align:center; color:#dc2626; }
+  .link-back { text-align:center; margin-top:16px; }
+  .link-back a { color:#6b7280; font-size:12px; text-decoration:none; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">
+    <div class="badge">PE</div>
+    <h1>Prime Entregas</h1>
+    <p>Painel Administrativo</p>
+  </div>
+  <label>Usuário</label>
+  <input id="usuario" autocomplete="username" />
+  <label>Senha</label>
+  <input id="senha" type="password" autocomplete="current-password" />
+  <button id="btn-login">Entrar</button>
+  <div id="msg" class="msg"></div>
+  <div class="link-back"><a href="/">← Voltar para bater ponto</a></div>
+</div>
+<script>
+el = (id) => document.getElementById(id);
+el('btn-login').addEventListener('click', login);
+el('senha').addEventListener('keydown', (e) => { if (e.key === 'Enter') login(); });
+
+async function login() {
+  const usuario = el('usuario').value.trim();
+  const senha = el('senha').value;
+  el('msg').textContent = '';
+  el('btn-login').disabled = true;
+  try {
+    const resp = await fetch('/api/admin/login', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({usuario, senha}) });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.erro || 'Erro ao entrar');
+    window.location.href = '/admin/dashboard.html';
+  } catch (e) {
+    el('msg').textContent = e.message;
+  } finally {
+    el('btn-login').disabled = false;
+  }
+}
+</script>
+</body>
+</html>
