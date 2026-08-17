@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Prime Entregas — Painel Administrativo</title>
+<style>
+  :root { --primary:#ff6b00; --primary-dark:#d95700; --text:#1a1a1a; --muted:#6b7280; --bg:#f5f6f8; --green:#16a34a; --red:#dc2626; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background:var(--bg); color:var(--text); }
+  header {
+    background:#14161c; color:#fff; padding:14px 20px; display:flex; align-items:center; justify-content:space-between;
+    position:sticky; top:0; z-index:10;
+  }
+  header .brand { display:flex; align-items:center; gap:10px; font-weight:800; }
+  header .brand .badge { width:34px; height:34px; border-radius:9px; background:var(--primary); display:flex; align-items:center; justify-content:center; font-size:15px; }
+  header .actions { display:flex; align-items:center; gap:14px; font-size:13px; }
+  header a, header button { color:#cbd5e1; background:none; border:none; cursor:pointer; font-size:13px; }
+  header button.logout { color:#fca5a5; }
+
+  nav.tabs { display:flex; gap:4px; padding:0 20px; background:#fff; border-bottom:1px solid #e5e7eb; }
+  nav.tabs button {
+    padding:14px 16px; border:none; background:none; cursor:pointer; font-weight:700; font-size:14px; color:var(--muted);
+    border-bottom:3px solid transparent;
+  }
+  nav.tabs button.active { color:var(--primary); border-bottom-color:var(--primary); }
+
+  main { padding:20px; max-width:1100px; margin:0 auto; }
+  .panel { display:none; }
+  .panel.active { display:block; }
+
+  .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:20px; }
+  .stat { background:#fff; border-radius:14px; padding:16px; box-shadow:0 1px 3px rgba(0,0,0,.06); }
+  .stat .n { font-size:24px; font-weight:800; }
+  .stat .l { font-size:12px; color:var(--muted); margin-top:4px; }
+
+  .toolbar { display:flex; flex-wrap:wrap; gap:10px; align-items:end; margin-bottom:16px; background:#fff; padding:14px; border-radius:14px; box-shadow:0 1px 3px rgba(0,0,0,.06); }
+  .toolbar .field { display:flex; flex-direction:column; gap:4px; }
+  .toolbar label { font-size:12px; font-weight:600; color:var(--muted); }
+  .toolbar select, .toolbar input { padding:9px 10px; border-radius:8px; border:1px solid #d1d5db; font-size:14px; }
+  .btn { padding:9px 16px; border-radius:8px; border:none; font-weight:700; cursor:pointer; font-size:13px; }
+  .btn-primary { background:var(--primary); color:#fff; }
+  .btn-outline { background:#fff; border:1.5px solid #d1d5db; color:#111827; }
+
+  table { width:100%; border-collapse:collapse; background:#fff; border-radius:14px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,.06); }
+  th, td { padding:11px 12px; text-align:left; font-size:13px; border-bottom:1px solid #f1f2f4; }
+  th { background:#fafafa; color:var(--muted); font-weight:700; text-transform:uppercase; font-size:11px; }
+  tr:last-child td { border-bottom:none; }
+  .tipo-tag { padding:3px 8px; border-radius:6px; font-size:11px; font-weight:700; }
+  .tipo-entrada { background:#dcfce7; color:#166534; }
+  .tipo-saida { background:#fee2e2; color:#991b1b; }
+  .tipo-intervalo_inicio, .tipo-intervalo_fim { background:#fef3c7; color:#92400e; }
+  .foto-thumb { width:38px; height:38px; border-radius:8px; object-fit:cover; cursor:pointer; }
+  .loc-link { color:var(--primary); font-size:12px; text-decoration:none; font-weight:600; }
+  .empty { text-align:center; color:var(--muted); padding:40px; }
+
+  .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .form-grid .full { grid-column: 1 / -1; }
+  .modal-bg { position:fixed; inset:0; background:rgba(0,0,0,.5); display:none; align-items:center; justify-content:center; z-index:50; padding:16px; }
+  .modal-bg.show { display:flex; }
+  .modal { background:#fff; border-radius:16px; padding:22px; width:100%; max-width:420px; }
+  .modal h3 { margin-top:0; }
+  .modal label { font-size:12px; font-weight:600; color:var(--muted); display:block; margin:10px 0 4px; }
+  .modal input { width:100%; padding:10px 12px; border-radius:8px; border:1px solid #d1d5db; font-size:14px; }
+  .modal .row { display:flex; gap:10px; margin-top:18px; }
+  .modal .row button { flex:1; }
+  .status-badge { font-size:11px; font-weight:700; padding:3px 8px; border-radius:6px; }
+  .status-ativo { background:#dcfce7; color:#166534; }
+  .status-inativo { background:#f1f5f9; color:#64748b; }
+
+  .lightbox-bg { position:fixed; inset:0; background:rgba(0,0,0,.85); display:none; align-items:center; justify-content:center; z-index:60; }
+  .lightbox-bg.show { display:flex; }
+  .lightbox-bg img { max-width:90%; max-height:90%; border-radius:10px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand"><div class="badge">PE</div> Prime Entregas — Painel</div>
+  <div class="actions">
+    <span id="admin-user"></span>
+    <button class="logout" id="btn-logout">Sair</button>
+  </div>
+</header>
+
+<nav class="tabs">
+  <button class="tab-btn active" data-tab="relatorios">Relatórios</button>
+  <button class="tab-btn" data-tab="colaboradores">Colaboradores</button>
+</nav>
+
+<main>
+  <!-- PAINEL RELATÓRIOS -->
+  <section id="panel-relatorios" class="panel active">
+    <div class="cards" id="cards-resumo"></div>
+
+    <div class="toolbar">
+      <div class="field">
+        <label>Colaborador</label>
+        <select id="f-colaborador"><option value="">Todos</option></select>
+      </div>
+      <div class="field">
+        <label>De</label>
+        <input type="date" id="f-inicio" />
+      </div>
+      <div class="field">
+        <label>Até</label>
+        <input type="date" id="f-fim" />
+      </div>
+      <button class="btn btn-primary" id="btn-filtrar">Filtrar</button>
+      <button class="btn btn-outline" id="btn-exportar">⬇ Exportar Excel</button>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>Foto</th><th>Colaborador</th><th>Tipo</th><th>Data/Hora</th><th>Localização</th></tr>
+      </thead>
+      <tbody id="tbody-registros"></tbody>
+    </table>
+    <div id="registros-empty" class="empty hidden">Nenhum registro encontrado para o filtro selecionado.</div>
+  </section>
+
+  <!-- PAINEL COLABORADORES -->
+  <section id="panel-colaboradores" class="panel">
+    <div class="toolbar" style="justify-content:space-between;">
+      <div style="font-weight:700;">Colaboradores cadastrados</div>
+      <button class="btn btn-primary" id="btn-novo-colab">+ Novo colaborador</button>
+    </div>
+    <table>
+      <thead>
+        <tr><th>Matrícula</th><th>Nome</th><th>Cargo</th><th>Status</th><th></th></tr>
+      </thead>
+      <tbody id="tbody-colaboradores"></tbody>
+    </table>
+  </section>
+</main>
+
+<!-- MODAL COLABORADOR -->
+<div class="modal-bg" id="modal-colab">
+  <div class="modal">
+    <h3 id="modal-colab-title">Novo colaborador</h3>
+    <input type="hidden" id="colab-id" />
+    <label>Matrícula</label>
+    <input id="colab-matricula" />
+    <label>Nome completo</label>
+    <input id="colab-nome" />
+    <label>Cargo</label>
+    <input id="colab-cargo" placeholder="Ex: Entregador" />
+    <label>PIN (4-6 dígitos)</label>
+    <input id="colab-pin" placeholder="Deixe em branco para não alterar" inputmode="numeric" />
+    <div class="row">
+      <button class="btn btn-outline" id="btn-cancelar-colab">Cancelar</button>
+      <button class="btn btn-primary" id="btn-salvar-colab">Salvar</button>
+    </div>
+    <div id="colab-msg" style="font-size:12px; color:#dc2626; margin-top:8px;"></div>
+  </div>
+</div>
+
+<!-- LIGHTBOX FOTO -->
+<div class="lightbox-bg" id="lightbox">
+  <img id="lightbox-img" />
+</div>
+
+<script>
+const el = (id) => document.getElementById(id);
+let colaboradoresCache = [];
+
+// ---- AUTH GUARD ----
+(async function checkAuth() {
+  const resp = await fetch('/api/admin/me');
+  if (!resp.ok) { window.location.href = '/admin/login.html'; return; }
+  const data = await resp.json();
+  el('admin-user').textContent = data.usuario;
+  init();
+})();
+
+el('btn-logout').addEventListener('click', async () => {
+  await fetch('/api/admin/logout', { method: 'POST' });
+  window.location.href = '/admin/login.html';
+});
+
+// ---- TABS ----
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    el('panel-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+async function init() {
+  await carregarColaboradores();
+  await carregarRegistros();
+}
+
+// ---- COLABORADORES ----
+async function carregarColaboradores() {
+  const resp = await fetch('/api/admin/colaboradores');
+  colaboradoresCache = await resp.json();
+
+  const select = el('f-colaborador');
+  select.innerHTML = '<option value="">Todos</option>' +
+    colaboradoresCache.filter(c => c.ativo).map(c => `<option value="${c.id}">${c.nome} (${c.matricula})</option>`).join('');
+
+  el('tbody-colaboradores').innerHTML = colaboradoresCache.map(c => `
+    <tr>
+      <td>${c.matricula}</td>
+      <td>${c.nome}</td>
+      <td>${c.cargo || '-'}</td>
+      <td><span class="status-badge ${c.ativo ? 'status-ativo' : 'status-inativo'}">${c.ativo ? 'Ativo' : 'Inativo'}</span></td>
+      <td>
+        <button class="btn btn-outline" onclick="editarColab(${c.id})" style="padding:5px 10px; font-size:12px;">Editar</button>
+        ${c.ativo ? `<button class="btn btn-outline" onclick="desativarColab(${c.id})" style="padding:5px 10px; font-size:12px; color:#dc2626;">Desativar</button>` : ''}
+      </td>
+    </tr>
+  `).join('') || '<tr><td colspan="5" class="empty">Nenhum colaborador cadastrado.</td></tr>';
+}
+
+el('btn-novo-colab').addEventListener('click', () => abrirModalColab());
+el('btn-cancelar-colab').addEventListener('click', () => el('modal-colab').classList.remove('show'));
+
+function abrirModalColab(colab) {
+  el('modal-colab-title').textContent = colab ? 'Editar colaborador' : 'Novo colaborador';
+  el('colab-id').value = colab ? colab.id : '';
+  el('colab-matricula').value = colab ? colab.matricula : '';
+  el('colab-matricula').disabled = !!colab;
+  el('colab-nome').value = colab ? colab.nome : '';
+  el('colab-cargo').value = colab ? (colab.cargo || '') : '';
+  el('colab-pin').value = '';
+  el('colab-msg').textContent = '';
+  el('modal-colab').classList.add('show');
+}
+
+window.editarColab = (id) => {
+  const c = colaboradoresCache.find(x => x.id === id);
+  if (c) abrirModalColab(c);
+};
+
+window.desativarColab = async (id) => {
+  if (!confirm('Desativar este colaborador? Ele não conseguirá mais bater ponto.')) return;
+  await fetch('/api/admin/colaboradores/' + id, { method: 'DELETE' });
+  carregarColaboradores();
+};
+
+el('btn-salvar-colab').addEventListener('click', async () => {
+  const id = el('colab-id').value;
+  const payload = {
+    matricula: el('colab-matricula').value.trim(),
+    nome: el('colab-nome').value.trim(),
+    cargo: el('colab-cargo').value.trim(),
+    pin: el('colab-pin').value.trim(),
+  };
+  if (!payload.nome || (!id && !payload.matricula) || (!id && !payload.pin)) {
+    el('colab-msg').textContent = 'Preencha matrícula, nome e PIN.';
+    return;
+  }
+  try {
+    const url = id ? '/api/admin/colaboradores/' + id : '/api/admin/colaboradores';
+    const method = id ? 'PUT' : 'POST';
+    const resp = await fetch(url, { method, headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.erro || 'Erro ao salvar');
+    el('modal-colab').classList.remove('show');
+    carregarColaboradores();
+  } catch (e) {
+    el('colab-msg').textContent = e.message;
+  }
+});
+
+// ---- REGISTROS / RELATÓRIOS ----
+function tipoLabel(t) {
+  return { entrada:'Entrada', saida:'Saída', intervalo_inicio:'Início Intervalo', intervalo_fim:'Fim Intervalo' }[t] || t;
+}
+
+async function carregarRegistros() {
+  const params = new URLSearchParams();
+  if (el('f-colaborador').value) params.set('colaborador_id', el('f-colaborador').value);
+  if (el('f-inicio').value) params.set('inicio', el('f-inicio').value);
+  if (el('f-fim').value) params.set('fim', el('f-fim').value);
+
+  const resp = await fetch('/api/admin/registros?' + params.toString());
+  const registros = await resp.json();
+
+  // cards resumo
+  const hoje = new Date().toISOString().slice(0,10);
+  const hojeCount = registros.filter(r => r.criado_em.slice(0,10) === hoje).length;
+  const colabsUnicos = new Set(registros.map(r => r.colaborador_id)).size;
+  el('cards-resumo').innerHTML = `
+    <div class="stat"><div class="n">${registros.length}</div><div class="l">Registros no período</div></div>
+    <div class="stat"><div class="n">${hojeCount}</div><div class="l">Registros hoje</div></div>
+    <div class="stat"><div class="n">${colabsUnicos}</div><div class="l">Colaboradores ativos no período</div></div>
+    <div class="stat"><div class="n">${colaboradoresCache.filter(c=>c.ativo).length}</div><div class="l">Total de colaboradores</div></div>
+  `;
+
+  if (registros.length === 0) {
+    el('tbody-registros').innerHTML = '';
+    el('registros-empty').classList.remove('hidden');
+    return;
+  }
+  el('registros-empty').classList.add('hidden');
+
+  el('tbody-registros').innerHTML = registros.map(r => {
+    const dataHora = new Date(r.criado_em.replace(' ', 'T') + 'Z').toLocaleString('pt-BR', { timeZone: 'America/Bahia' });
+    const loc = r.latitude
+      ? `<a class="loc-link" target="_blank" href="https://www.google.com/maps?q=${r.latitude},${r.longitude}">📍 Ver no mapa</a>`
+      : '<span style="color:#9ca3af; font-size:12px;">Sem localização</span>';
+    return `
+      <tr>
+        <td><img class="foto-thumb" src="${r.foto_path}" onclick="abrirFoto('${r.foto_path}')" /></td>
+        <td>${r.nome} <span style="color:#9ca3af;">(${r.matricula})</span></td>
+        <td><span class="tipo-tag tipo-${r.tipo}">${tipoLabel(r.tipo)}</span></td>
+        <td>${dataHora}</td>
+        <td>${loc}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+window.abrirFoto = (src) => {
+  el('lightbox-img').src = src;
+  el('lightbox').classList.add('show');
+};
+el('lightbox').addEventListener('click', () => el('lightbox').classList.remove('show'));
+
+el('btn-filtrar').addEventListener('click', carregarRegistros);
+
+el('btn-exportar').addEventListener('click', () => {
+  const params = new URLSearchParams();
+  if (el('f-colaborador').value) params.set('colaborador_id', el('f-colaborador').value);
+  if (el('f-inicio').value) params.set('inicio', el('f-inicio').value);
+  if (el('f-fim').value) params.set('fim', el('f-fim').value);
+  window.location.href = '/api/admin/registros/export?' + params.toString();
+});
+</script>
+</body>
+</html>
