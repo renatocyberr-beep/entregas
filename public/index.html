@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+<title>Prime Entregas — Bater Ponto</title>
+<style>
+  :root {
+    --primary: #ff6b00;
+    --primary-dark: #d95700;
+    --bg: #0f1115;
+    --card: #ffffff;
+    --text: #1a1a1a;
+    --muted: #6b7280;
+    --green: #16a34a;
+    --red: #dc2626;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background: linear-gradient(160deg, #1a1d24, #0f1115);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    color: var(--text);
+  }
+  .card {
+    background: var(--card);
+    border-radius: 20px;
+    width: 100%;
+    max-width: 420px;
+    padding: 28px 24px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  }
+  .logo {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  .logo .badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px; height: 56px;
+    border-radius: 14px;
+    background: var(--primary);
+    color: white;
+    font-size: 26px;
+    font-weight: 800;
+    margin-bottom: 10px;
+  }
+  .logo h1 { font-size: 18px; margin: 0; }
+  .logo p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+
+  label { font-size: 13px; font-weight: 600; color: #374151; display: block; margin: 14px 0 6px; }
+  input {
+    width: 100%;
+    padding: 13px 14px;
+    border-radius: 12px;
+    border: 1.5px solid #e5e7eb;
+    font-size: 16px;
+    outline: none;
+  }
+  input:focus { border-color: var(--primary); }
+
+  button {
+    width: 100%;
+    padding: 14px;
+    border-radius: 12px;
+    border: none;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 18px;
+  }
+  .btn-primary { background: var(--primary); color: white; }
+  .btn-primary:active { background: var(--primary-dark); }
+  .btn-primary:disabled { background: #d1d5db; cursor: not-allowed; }
+  .btn-secondary { background: #f3f4f6; color: #111827; margin-top: 10px; }
+
+  .msg { font-size: 13px; margin-top: 10px; text-align: center; }
+  .msg.error { color: var(--red); }
+  .msg.success { color: var(--green); }
+
+  .hidden { display: none !important; }
+
+  .welcome { text-align: center; margin-bottom: 6px; }
+  .welcome .name { font-size: 20px; font-weight: 800; }
+  .welcome .role { color: var(--muted); font-size: 13px; }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 18px; }
+  .tipo-btn {
+    padding: 16px 10px;
+    border-radius: 14px;
+    border: 1.5px solid #e5e7eb;
+    background: #fafafa;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    color: #111827;
+  }
+  .tipo-btn.entrada { border-color: #86efac; }
+  .tipo-btn.saida { border-color: #fca5a5; }
+
+  video, canvas { width: 100%; border-radius: 14px; margin-top: 14px; background: #000; }
+  .camera-box { position: relative; }
+  .capture-btn {
+    position: absolute;
+    bottom: 14px; left: 50%;
+    transform: translateX(-50%);
+    width: 64px; height: 64px;
+    border-radius: 50%;
+    background: white;
+    border: 4px solid var(--primary);
+    margin: 0;
+  }
+  .status-row {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px; color: var(--muted); margin-top: 10px;
+  }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: #d1d5db; }
+  .dot.ok { background: var(--green); }
+  .dot.pending { background: #f59e0b; }
+
+  .link-admin { text-align: center; margin-top: 18px; }
+  .link-admin a { color: var(--muted); font-size: 12px; text-decoration: none; }
+
+  .preview { text-align: center; }
+  .preview img { width: 60%; border-radius: 14px; margin-top: 14px; }
+</style>
+</head>
+<body>
+<div class="card">
+
+  <div class="logo">
+    <div class="badge">PE</div>
+    <h1>Prime Entregas</h1>
+    <p>Controle de Ponto</p>
+  </div>
+
+  <!-- ETAPA 1: LOGIN -->
+  <div id="etapa-login">
+    <label>Matrícula</label>
+    <input id="matricula" inputmode="numeric" placeholder="Ex: 001" autocomplete="off" />
+    <label>PIN</label>
+    <input id="pin" type="password" inputmode="numeric" placeholder="••••" autocomplete="off" />
+    <button class="btn-primary" id="btn-entrar">Entrar</button>
+    <div id="login-msg" class="msg"></div>
+  </div>
+
+  <!-- ETAPA 2: ESCOLHER TIPO -->
+  <div id="etapa-tipo" class="hidden">
+    <div class="welcome">
+      <div class="name" id="colab-nome"></div>
+      <div class="role" id="colab-cargo"></div>
+    </div>
+    <div class="grid2">
+      <button class="tipo-btn entrada" data-tipo="entrada">🟢 Entrada</button>
+      <button class="tipo-btn saida" data-tipo="saida">🔴 Saída</button>
+      <button class="tipo-btn" data-tipo="intervalo_inicio">⏸️ Início Intervalo</button>
+      <button class="tipo-btn" data-tipo="intervalo_fim">▶️ Fim Intervalo</button>
+    </div>
+    <button class="btn-secondary" id="btn-sair">Trocar colaborador</button>
+  </div>
+
+  <!-- ETAPA 3: CÂMERA -->
+  <div id="etapa-camera" class="hidden">
+    <div class="status-row"><span class="dot" id="dot-loc"></span><span id="loc-status">Obtendo localização...</span></div>
+    <div class="camera-box">
+      <video id="video" autoplay playsinline muted></video>
+      <button class="capture-btn" id="btn-capturar"></button>
+    </div>
+    <button class="btn-secondary" id="btn-cancelar-camera">Cancelar</button>
+  </div>
+
+  <!-- ETAPA 4: CONFIRMAR ENVIO -->
+  <div id="etapa-confirmar" class="hidden">
+    <div class="preview"><img id="foto-preview" /></div>
+    <div class="status-row"><span class="dot ok"></span><span id="loc-resumo"></span></div>
+    <button class="btn-primary" id="btn-enviar">Confirmar registro</button>
+    <button class="btn-secondary" id="btn-refazer">Tirar outra foto</button>
+    <div id="envio-msg" class="msg"></div>
+  </div>
+
+  <!-- ETAPA 5: SUCESSO -->
+  <div id="etapa-sucesso" class="hidden">
+    <div class="msg success" style="font-size:16px; margin-top: 20px;">
+      ✅ Ponto registrado com sucesso!<br/>
+      <span id="resumo-final" style="color:#111827; font-weight:700;"></span>
+    </div>
+    <button class="btn-primary" id="btn-novo-registro">Novo registro</button>
+  </div>
+
+  <div class="link-admin"><a href="/admin/login.html">Painel administrativo</a></div>
+</div>
+
+<canvas id="canvas" class="hidden"></canvas>
+
+<script>
+let colaborador = null;
+let tipoSelecionado = null;
+let localizacao = { latitude: null, longitude: null, precisao: null };
+let fotoBlob = null;
+let stream = null;
+
+const el = (id) => document.getElementById(id);
+const show = (id) => { ['etapa-login','etapa-tipo','etapa-camera','etapa-confirmar','etapa-sucesso'].forEach(e => el(e).classList.add('hidden')); el(id).classList.remove('hidden'); };
+
+// ---- LOGIN ----
+el('btn-entrar').addEventListener('click', async () => {
+  const matricula = el('matricula').value.trim();
+  const pin = el('pin').value.trim();
+  el('login-msg').textContent = '';
+  if (!matricula || !pin) { el('login-msg').textContent = 'Preencha matrícula e PIN.'; el('login-msg').className='msg error'; return; }
+  el('btn-entrar').disabled = true; el('btn-entrar').textContent = 'Verificando...';
+  try {
+    const resp = await fetch('/api/ponto/validar', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({matricula, pin}) });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.erro || 'Erro ao validar');
+    colaborador = { ...data, matricula, pin };
+    el('colab-nome').textContent = colaborador.nome;
+    el('colab-cargo').textContent = colaborador.cargo || '';
+    show('etapa-tipo');
+  } catch (e) {
+    el('login-msg').textContent = e.message;
+    el('login-msg').className = 'msg error';
+  } finally {
+    el('btn-entrar').disabled = false; el('btn-entrar').textContent = 'Entrar';
+  }
+});
+
+el('btn-sair').addEventListener('click', () => {
+  colaborador = null;
+  el('matricula').value=''; el('pin').value='';
+  show('etapa-login');
+});
+
+// ---- ESCOLHER TIPO -> ABRIR CAMERA ----
+document.querySelectorAll('.tipo-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    tipoSelecionado = btn.dataset.tipo;
+    abrirCamera();
+  });
+});
+
+async function abrirCamera() {
+  show('etapa-camera');
+  el('dot-loc').className = 'dot pending';
+  el('loc-status').textContent = 'Obtendo localização...';
+
+  // Localização
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        localizacao = { latitude: pos.coords.latitude, longitude: pos.coords.longitude, precisao: pos.coords.accuracy };
+        el('dot-loc').className = 'dot ok';
+        el('loc-status').textContent = `Localização obtida (±${Math.round(pos.coords.accuracy)}m)`;
+      },
+      (err) => {
+        el('dot-loc').className = 'dot';
+        el('loc-status').textContent = 'Não foi possível obter localização: ' + err.message;
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  } else {
+    el('loc-status').textContent = 'Geolocalização não suportada neste navegador.';
+  }
+
+  // Camera
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+    el('video').srcObject = stream;
+  } catch (e) {
+    alert('Não foi possível acessar a câmera: ' + e.message);
+    show('etapa-tipo');
+  }
+}
+
+function pararCamera() {
+  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+}
+
+el('btn-cancelar-camera').addEventListener('click', () => {
+  pararCamera();
+  show('etapa-tipo');
+});
+
+el('btn-capturar').addEventListener('click', () => {
+  const video = el('video');
+  const canvas = el('canvas');
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+  canvas.toBlob((blob) => {
+    fotoBlob = blob;
+    el('foto-preview').src = URL.createObjectURL(blob);
+    pararCamera();
+    const resumo = localizacao.latitude
+      ? `Lat: ${localizacao.latitude.toFixed(5)}, Lng: ${localizacao.longitude.toFixed(5)} (±${Math.round(localizacao.precisao)}m)`
+      : 'Localização não disponível';
+    el('loc-resumo').textContent = resumo;
+    show('etapa-confirmar');
+  }, 'image/jpeg', 0.85);
+});
+
+el('btn-refazer').addEventListener('click', () => {
+  fotoBlob = null;
+  abrirCamera();
+});
+
+el('btn-enviar').addEventListener('click', async () => {
+  el('btn-enviar').disabled = true; el('btn-enviar').textContent = 'Enviando...';
+  el('envio-msg').textContent = '';
+  try {
+    const fd = new FormData();
+    fd.append('matricula', colaborador.matricula);
+    fd.append('pin', colaborador.pin);
+    fd.append('tipo', tipoSelecionado);
+    fd.append('foto', fotoBlob, 'ponto.jpg');
+    if (localizacao.latitude) {
+      fd.append('latitude', localizacao.latitude);
+      fd.append('longitude', localizacao.longitude);
+      fd.append('precisao', localizacao.precisao);
+    }
+    const resp = await fetch('/api/ponto/bater', { method: 'POST', body: fd });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.erro || 'Erro ao enviar');
+    const tipoLabel = {entrada:'Entrada', saida:'Saída', intervalo_inicio:'Início de Intervalo', intervalo_fim:'Fim de Intervalo'}[tipoSelecionado];
+    el('resumo-final').textContent = `${tipoLabel} — ${data.registro.horario}`;
+    show('etapa-sucesso');
+  } catch (e) {
+    el('envio-msg').textContent = e.message;
+    el('envio-msg').className = 'msg error';
+  } finally {
+    el('btn-enviar').disabled = false; el('btn-enviar').textContent = 'Confirmar registro';
+  }
+});
+
+el('btn-novo-registro').addEventListener('click', () => {
+  fotoBlob = null; tipoSelecionado = null;
+  show('etapa-tipo');
+});
+</script>
+</body>
+</html>
