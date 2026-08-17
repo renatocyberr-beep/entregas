@@ -1,0 +1,25 @@
+{
+  "name": "prime-entregas-ponto",
+  "version": "1.0.0",
+  "description": "Sistema de controle de ponto da Prime Entregas - registro por foto, localizacao e relatorios.",
+  "main": "server.js",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "better-sqlite3": "^13.0.3",
+    "cookie-parser": "^1.4.7",
+    "dayjs": "^1.11.22",
+    "exceljs": "^4.4.0",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "multer": "^2.2.0"
+  }
+}
